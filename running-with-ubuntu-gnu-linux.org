@@ -1,0 +1,489 @@
+#+HTML_HEAD_EXTRA: <link rel="stylesheet" type="text/css" href="mixed-tut.css" />
+
+#+BEGIN_HTML
+<div style="position: absolute; top: 0px; left: 0px; padding: 2px; border-bottom: 2px solid black; border-right: 2px solid black;">
+<a href="./index.html"><p style="margin: 0px; padding: 0px; "> &lt; Index</p></a>
+</div>
+#+END_HTML
+
+#+TITLE: Running with Ubuntu GNU/Linux
+#+AUTHOR: Denis Volk
+#+EMAIL: denis.volk@gmail.com
+#+KEYWORDS: Ubuntu, Linux, server, minimal, grsecurity
+#+DESCRIPTION: A guide to installing a custom, minimal(ish) GNU/Linux system
+
+* Introduction
+
+Ubuntu is often believed to be bloated and slow, and users are recommended 
+to install other distributions like Arch Linux if they want to have a 'lean' system. 
+This belief is mistaken. Ubuntu can provide a very good mix of leanness and convenience. 
+
+This page is a beginner's guide on how to install and setup such a system. It's
+based on my own preferences and notes.
+
+* Install
+
+** Picking the right installer
+
+Ubuntu media come in two forms: desktop and server. The desktop installer doesn't 
+offer many options. We'll be getting the server image from:
+
+- http://www.ubuntu.com/download/server
+
+I recommend getting the latest release. The system can be upgraded to a new release
+fairly easily.
+
+** Before Proceeding
+
+As always, backup important data and find some room for a new install. If you have
+any kind of special setup not covered here (such as UEFI or PPPoE), you should
+either read about it carefully before installation or have another Internet-capable 
+device nearby.
+
+** Boot options
+
+Once you've booted the install media, you will have access to additional options 
+through the function keys F1-F6. 
+
+Some to consider are:
+
+- *Expert mode* Enabling this gives more options in the installer. You shouldn't need most of the options, but one that's interesting is that you can choose to have a separate /home partition, or separate /home, /usr, /var, and /tmp partitions. Having separate partitions can sometimes be useful. On the other hand, it's annoying if you run out of space on one of them.
+
+- *Install a minimal system* Enabling this will install a slightly smaller system (1.1G normally, 1G with 'minimal')
+
+- *Free software only* If you enable this, the installer won't add the multiverse and restricted software repositories. 
+
+Select 'Install Ubuntu Server' and press enter to boot into the installer
+
+** Some installation options
+
+The installer will ask you some simple questions. 
+
+After setting up a user, it will ask you if you want to encrypt the user(s) home 
+directories. The method used seems rather inconvenient. I recommend saying *no* here.
+
+When partitioning disks, the installer will ask you what partitioning method to use. 
+I strongly recommend picking *encrypted LVM*. This will encrypt all partitions
+except /boot.
+
+The weakest part of the encryption will be your passphrase. 
+Read carefully and pick a good one.
+
+The installer will ask you if you want automatic security updates. This is a 
+good idea and it's easy to toggle it later if you change your mind.
+
+Next is the software selection. Leave everything unchecked unless you actually
+want it.
+
+The system will install and then reboot.
+
+* Post-install
+
+** Using tmux
+
+Login as the user you created. Tmux is very useful for managing terminals. 
+It's already installed, all you need to do is, well... run 'tmux' 
+
+If you've never used it before, Control-b ? (usually written as: C-b ?) will 
+bring up the keybindings.
+
+** Firewall
+
+It's not a bad idea to immediately enable the firewall:
+
+#+BEGIN_SRC
+sudo ufw enable
+sudo ufw default deny outgoing
+sudo ufw allow out 80/tcp
+sudo ufw allow out 443/tcp
+sudo ufw allow out to <DNS SERVER IP HERE> port 53
+#+END_SRC
+
+This will drop all incoming connections, and all outgoing connections except HTTP and HTTPS.
+You should add rules here only as required. 
+
+If your dns server was set automatically through DHCP or PPPoE, you can 
+find it with
+
+#+BEGIN_SRC 
+cat /etc/resolv.conf
+#+END_SRC 
+
+** Setting apt defaults
+
+open /etc/apt/apt.conf for editing
+
+#+BEGIN_SRC
+sudo apt-get install zile
+sudo zile /etc/apt/apt.conf
+#+END_SRC
+
+and add
+
+#+BEGIN_SRC
+APT::Install-Recommends "0";
+APT::Install-Suggests "0";
+#+END_SRC
+
+This will make apt-get _not_ consider recommended and suggested packages as dependencies.
+It will still print what it recommends installing every time you install a package through apt-get, so
+you'll need to consider what you actually need.
+
+** Updating
+
+The packages that came on the install media are probably outdated. It's important
+to update to the latest
+
+#+BEGIN_SRC
+sudo apt-get update
+sudo apt-get dist-upgrade
+#+END_SRC
+
+It's not a bad idea to reboot after this.
+
+** World un-readable
+
+By default, anyone can read files that users create. This is for compatibility with services 
+like HTTP servers, but if you're not using those it's possible to slightly increase security
+by making your files accessible to you.
+
+First we need make sure only you have access to your home directory
+
+#+BEGIN_SRC
+chmod -R go-rwx ~
+#+END_SRC 
+
+Then open ~/.bashrc and put 
+
+#+BEGIN_SRC
+umask 077
+#+END_SRC
+
+at the end. This makes it so newly created files can't be accessed by other users.
+
+** Tracking /etc
+
+It's a good idea to keep track of what happens in /etc. etckeeper is a wrapper
+around version control systems that does this
+
+#+BEGIN_SRC 
+sudo apt-get install etckeeper git
+#+END_SRC
+
+etckeeper assumes you're using the bazaar VCS, but I chose git because it's 
+what I know best. We need to uncomment git by removing the #
+
+#+BEGIN_SRC
+VCS="git"
+#+END_SRC
+
+in /etc/etckeeper/etckeeper.conf
+
+and also comment out the other one with
+
+#+BEGIN_SRC 
+#VCS="bzr"
+#+END_SRC
+
+Had you installed bzr, it would have initialized etckeeper automatically, but
+on other VCS you have to do it yourself
+
+#+BEGIN_SRC
+sudo etckeeper init
+#+END_SRC
+
+etckeeper will auto-add and commit everything in /etc every time you add or remove packages
+through apt-get. Let's try it out by installing a fancy git tool!
+
+#+BEGIN_SRC
+sudo apt-get install tig
+#+END_SRC
+
+now you can run
+
+#+BEGIN_SRC
+cd etc; sudo tig
+#+END_SRC
+
+to browse changes in /etc
+
+** X.Org
+
+It's time to install X.Org
+
+#+BEGIN_SRC
+sudo apt-get install xserver-xorg xinit i3 rxvt-unicode
+#+END_SRC
+
+open ~/.xinitrc and add
+
+#+BEGIN_SRC
+exec i3
+#+END_SRC 
+
+Now start it:
+
+#+BEGIN_SRC
+xinit -- -nolisten tcp
+#+END_SRC
+
+Setting up X was painful for a long time. Every time I do this and it just works I 
+feel like I'm living in the future.
+
+This should start up X.Org with the i3 window manager. After you accept the default settings 
+you should have blank screen.
+
+Press WinKey-Enter twice (usually written as: M-return, M for meta) to open two terminals. 
+Then press M-S-down (S = shift) arrow to rearrange the terminal layout
+
+If you haven't used i3 before, read the man page for more keybindings and then experiment. 
+It's a very useful window manager.
+
+The statusbar just displays which workspace we're on which isn't very useful and wastes space. 
+Let's comment it out in at the end of ~/.i3/config:
+
+#+BEGIN_SRC 
+#bar {
+#        status_command i3status
+#}
+#+END_SRC
+
+Since we're there let's also add another keybinding:
+
+#+BEGIN_SRC
+bindsym $mod+b border toggle
+#+END_SRC
+
+Now if you reload i3 by pressing M-S-r the statusbar should disappear. 
+
+Pressing M-b will toggle the decorations for the focused window, which is useful for saving screen space.
+
+** ranger & ncdu
+
+While using bash and coreutils is fine, at some point you'll probably want a more
+specialized interface for managing files. Once such interface is ranger:
+
+ncdu is a ncurses interface to du - disk usage utility. It makes it very easy
+to see what's eating up disk space.
+
+#+BEGIN_SRC
+sudo apt-get install ranger ncdu
+#+END_SRC
+
+Press ? to load the man page.
+
+** Firefox
+
+Let's install Firefox
+
+#+BEGIN_SRC
+sudo apt-get install firefox
+#+END_SRC
+
+The firefox package comes with an AppArmor profile, so let's take care of that before starting firefox
+for the first time
+
+** AppArmor
+
+Normally, an application running with a user id is able to do anything the user can do.
+AppArmor is a Linux kernel module that additionally restricts programs. An AppArmor profile
+for a program lists all files and capabilities that the program is allowed to use. Anything
+not on the list is denied and logged. For example, it's possible to restrict a PDF reader
+to only be able to read files with the .pdf extension, and deny write and network access
+altogether (for some reason this is an exercise left to the reader however). 
+AppArmor implements so-called Mandatory Access Controls. It's not the most
+sophisticated MAC framework, but it is probably the most convenient to use.
+
+Ubuntu comes with AppArmor enabled, all we need to do is install extra profiles and
+turn the profiles to enforcing mode.
+
+#+BEGIN_SRC
+sudo apt-get install apparmor-profiles apparmor-utils
+cd /etc/apparmor.d/
+sudo find . -maxdepth 1 -type f -exec aa-enforce '{}' \;
+#+END_SRC
+
+You can check that the profiles are enforced by running
+
+#+BEGIN_SRC
+aa-status
+#+END_SRC
+
+** More Firefox
+
+Now that we've enabled the AA profile for firefox, it's time to start and configure it
+
+Press M-2 to switch to the second workspace, press M-d to bring up dmenu, type in firefox and press
+enter to run it.
+
+Open the preferences and press M-w to switch to a tabbed layout.
+
+Type in about:blank as your home page.
+
+We can take some simple precautions to help avoid being tracked by corporations and agencies 
+on the web:
+
+On the privacy tab, select 'custom settings for history', then set 'accept third-party 
+cookies' to never and 'keep until' to 'I close firefox'. Check 'clear history when 
+firefox closes', click settings and check all the options except 'saved passwords'. 
+Uncheck the two 'Remember...' options above.
+
+Since we're here. Go to advanced - data choices and uncheck the health and crash reporters.
+
+One of the best things about firefox is how many addons there are for it. Here are some I
+recommend
+
+- Tree Style Tabs https://addons.mozilla.org/en-US/firefox/addon/tree-style-tab/
+- Noscript https://addons.mozilla.org/en-US/firefox/addon/noscript/
+- Adblock Plus https://addons.mozilla.org/en-US/firefox/addon/adblock-plus/
+- Requestpolicy https://addons.mozilla.org/en-US/firefox/addon/requestpolicy/
+- Refcontrol https://addons.mozilla.org/en-US/firefox/addon/refcontrol/
+- HTTPS everywhere https://www.eff.org/https-everywhere
+
+These are only the most basic tweaks. Firefox is a beast.
+
+** Youtube sans flash
+
+Youtube is entertaining and sometimes even useful. Browser plugins on the other hand
+are a terrible idea and HTML5 doesn't always work. Fortunately there's a way around these
+problems
+
+#+BEGIN_SRC
+sudo apt-get install mplayer youtube-dl
+#+END_SRC
+
+We can now download and play videos:
+
+#+BEGIN_SRC
+youtube-dl -f 18 http://www.youtube.com/watch?v=UdfY25gDjK8
+mplayer Richard\ Stallman\ signs\ my\ laptop\ and\ removes\ Windows\ 8\ license-UdfY25gDjK8.mp4
+#+END_SRC
+
+It used to be possible to play videos directly without saving them by using 
+youtube-dl -g, but google now returns HTTPS URLs and mplayer only understands HTTP.
+
+Despite the name, youtube-dl supports quite a few video sites.
+
+** GTK2 appearance
+
+The default look of GTK is not the best. The easiest way to change it is to install and run
+lxappearance. 
+
+#+BEGIN_SRC
+sudo apt-get install lxappearance gtk2-engines
+lxappearnace
+#+END_SRC
+
+** apt-file
+
+It's often useful to know which package a file came from. apt-file is a tool for searching files in packages.
+
+#+BEGIN_SRC
+sudo apt-get install apt-file
+sudo apt-file update
+#+END_SRC
+
+As a test we can look for packages that come with AppArmor profiles:
+
+#+BEGIN_SRC
+apt-file search '/etc/apparmor.d'
+#+END_SRC
+
+** Other software
+
+Some recommendations
+
+- *lyx* a WYSIWYG editor that exports to LaTeX (and so PDF, DVI). For writing everything from letters to books. Especially useful for anything science-y
+- *emacs* an editor that's also a web browser, video editor, spreadsheet, IRC and mail client,...
+- *gimp* raster graphics editor
+- *audacity* audio editor
+- *ffmpeg* very capable command-line video/audio editor
+- *irssi* IRC client
+- *zathura* PDF viewer
+- *djview4* DJVU viewer
+- *mutt* IMAP/SMTP email client
+- *feh* miniaml image viewer
+- *rtorrent* minimal torrent client
+
+* grsecurity
+
+** Why and how
+
+grsecurity is a patch for the linux kernel that provides many additional security features including
+its own MAC framework. It is not part of the kernel (at the moment) so it has to be installed manually.
+
+Is it necessary? Good question. But building a kernel is fun and you should do it at least once.
+
+** Building the Linux kernel
+
+We'll need some tools
+
+#+BEGIN_SRC
+sudo apt-get install build-essential libncurses5-dev gcc-4.8-plugin-dev
+mkdir ~/src
+cd ~/src
+#+END_SRC
+
+go to
+
+https://www.kernel.org/
+
+and download the latest kernel source. Grab the matching grsecurity patch and gradm from
+
+https://grsecurity.net/download.php
+
+Download the key and signatures, and let's verify the downloads:
+
+#+BEGIN_SRC 
+gpg --import spender-gpg-key.asc
+gpg --verify grsecurity*.patch.sig grsecurity*.patch
+gpg --verify gradm*.tar.gz.sig gradm*.tar.gz
+#+END_SRC
+
+and the Linux kernel source too (keyservers live on port 11371):
+
+#+BEGIN_SRC
+sudo ufw allow out 11371/tcp
+gpg --recv-keys 6092693E
+xz -cd linux-*.tar.xz | gpg --verify linux-*.tar.sign -
+#+END_SRC
+
+gpg will complain that the keys aren't trusted. But that is a tricky affair.
+
+#+BEGIN_SRC
+tar xf linux*.tar.gz
+cd linux*
+patch -p1 < ../grsecurity*.patch
+make menuconfig
+#+END_SRC
+
+At this point you will get menu system with many options and you should look over them carefully.
+Since we've patched with grsecurity, you should enable it in Security Options, or it's all for naught.
+Prominent options you may want to disable are various hotplugging features and IA32 emulation.
+
+Once you're done, it's time to build the kernel
+
+#+BEGIN_SRC
+make deb-pkg
+#+END_SRC
+
+If you have more than one core, you can parallelize the build process with -jN, e.g.:
+
+#+BEGIN_SRC
+make -j8 deb-pkg
+#+END_SRC
+
+Once it's done, you'll have fresh kernel packages. Install them with 
+
+#+BEGIN_SRC
+dpkg -i *.deb
+#+END_SRC
+
+Reboot and select the new kernel on the boot loader.
+
+** It doesn't work
+
+Your system didn't boot, or perhaps the keyboard isn't responding, or your sound card isn't detected.
+That's OK. It might take a couple of iterations to get everything working the first time. Try again.
+
+
