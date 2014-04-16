@@ -21,6 +21,10 @@ This belief is mistaken. Ubuntu can provide a very good mix of leanness and conv
 This page is a beginner's guide on how to install and setup such a system. It's
 based on my own preferences and notes.
 
+I used 14.4 for testing to write this, but everything should
+work with versions 12.4 and later. If it changes then I will
+update it.
+
 * Install
 
 ** Picking the right installer

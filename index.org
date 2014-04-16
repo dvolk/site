@@ -2,9 +2,11 @@
 
 #+OPTIONS: toc:nil
 #+OPTIONS: num:nil
+
+#+TITLE: Index
 #+AUTHOR: Denis Volk
-#+KEYWORDS: Denis Volk
 #+EMAIL: denis.volk@gmail.com
+#+KEYWORDS: Denis Volk
 #+DESCRIPTION: The homepage of Denis Volk
 
 #+BEGIN_QUOTE
@@ -44,7 +46,6 @@ on the  internet completely  for free.  Sites that offer  them are  in a
 _legally_ dubious position, but  publishers (academic and otherwise) are
 themselves  _ethically_ questionable  and are  perhaps the  bigger evil.
 Decide for yourself.
-
 
 * Contact
 
