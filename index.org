@@ -16,47 +16,30 @@ the result (2.91) -- E. T. Jaynes
 #+END_QUOTE
 
 * Me
-
-dv -- Denis  Volk. I like free software, haskell,  video games, space and
-cats.
-
+dv -- Denis  Volk. I like free software, haskell,  video games, space,
+and cats 😸.
 * By me
-
 ** Here
+- [[./a-quick-look-at-haskell.html][A Quick Look at Haskell (WIP)]]
 - [[./running-with-ubuntu-gnu-linux.html][Running with Ubuntu GNU/Linux]]
-
 - [[./linux-orbiter.html][Orbiter Space Flight Simulator on GNU/Linux HOW-TO]]
-
 ** Elsewhere
-
 - [[https://www.flickr.com/photos/denis_volk][Some photography on flickr]]
-
 - [[https://github.com/dvolk][Some code on github]]
-
 * Recommended reading
-
 - [[http://www.cambridge.org/us/academic/subjects/psychology/cognition/thinking-and-deciding-4th-edition][Thinking and deciding]]
-
 - [[http://global.oup.com/academic/product/a-guide-to-the-good-life-9780195374612][A Guide to the Good Life]]
-
 - [[http://www.samharris.org/lying][Lying]]
-
 With a bit of searching, it's possible to find these and many more books
 on the  internet completely  for free.  Sites that offer  them are  in a
 _legally_ dubious position, but  publishers (academic and otherwise) are
 themselves  _ethically_ questionable  and are  perhaps the  bigger evil.
 Decide for yourself.
-
 * Contact
-
 [[mailto:denis.volk@gmail.com][Email me]]
-
 * Links
-
 - [[https://www.fsf.org][The Free Software Foundation]]
-
 - [[https://www.haskell.org/haskellwiki/Haskell][Haskell programming language]]
-
 - [[https://en.wikipedia.org/wiki/List_of_literary_awards][Wikipedia's
   list of literary  awards]] - useful for finding  above-average books to
   read.

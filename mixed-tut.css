@@ -7,10 +7,26 @@ a:visited { color: #808000; }
 
 h1 { text-transform: uppercase; }
 h2 { text-transform: uppercase; }
-h3 { border-bottom: 1px solid black; }
+h3 {  }
 
 .outline-2 { margin-bottom: 20px; }
 .outline-3 { margin-bottom: 20px; }
 
 #table-of-contents { margin: 2%; }
 #text-table-of-contents { margin: 2%; }
+
+#corner-to-index {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    padding: 2px;
+    border-bottom: 2px solid black;
+    border-right:  2px solid black;
+    background-color: white;
+
+}
+
+#index-text {
+    margin: 0px;
+    padding: 0px;
+}

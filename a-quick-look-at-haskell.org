@@ -1,0 +1,628 @@
+#+HTML_HEAD_EXTRA: <link rel="stylesheet" type="text/css" href="mixed-tut.css" />
+
+#+BEGIN_HTML
+<div id="corner-to-index"><a href="./index.html"><p id="index-text"> &lt; Index</p></a></div>
+#+END_HTML
+
+#+TITLE: A Quick Look at Haskell (WIP)
+#+AUTHOR: Denis Volk
+#+EMAIL: denis.volk@gmail.com
+#+KEYWORDS: haskell tutorial
+#+DESCRIPTION: A look at the functional programming language Haskell
+
+* Environment
+
+Haskell is defined in the [[https://www.haskell.org/onlinereport/haskell2010/][Haskell Report]].
+
+The most used compiler is [[https://www.haskell.org/ghc/download][GHC]] (debian package =ghc=, =ghc-doc=).
+
+Haskell projects are typically built and packaged using [[https://www.haskell.org/cabal/][Cabal]] (=cabal-install=).
+
+There is an online package repository called [[https://hackage.haskell.org/][Hackage]].
+
+* Types
+
+#+BEGIN_SRC
+"Hello " ++ " World"
+#+END_SRC
+
+is an *expression*. Its *value* is
+
+#+BEGIN_SRC
+"Hello World"
+#+END_SRC
+
+Its *type* is
+
+#+BEGIN_SRC
+String
+#+END_SRC
+
+Types are declared using the reserved operator =::= (read as "has type")
+
+#+BEGIN_SRC
+xs = "Hello World" :: String
+#+END_SRC
+
+Here =xs= is a *variable* (or *bound value*). 
+
+Variables and types names are case sensitive. Variables names begin with
+a lowercase character and types names begin with an uppercase character.
+
+Type declarations  are optional.  In their  absence, Haskell  will infer
+the types. If it can't, you'll be asked to provide them.
+
+* Functions
+
+Defining and calling functions is very simple
+
+#+BEGIN_SRC
+addTwoLengths :: String -> String -> Int
+addTwoLengths xs ys = length xs + length ys
+#+END_SRC
+
+A function can be defined for different arguments (the order in which
+the definitions are written is important)
+
+#+BEGIN_SRC
+fac :: Int -> Int
+fac 1 = 1
+fac n = n * fac (n - 1)
+#+END_SRC
+
+** Let
+
+We can define local bindings with =let= ... =in= ...
+
+#+BEGIN_SRC 
+squaredDistance :: Int -> Int -> Int -> Int -> Int
+squaredDistance x1 y1 x2 y2 =
+  let dx = x1 - x2
+      dy = y1 - y2
+  in dx ^ 2 + dy ^ 2
+#+END_SRC
+
+** Partial application
+
+A function can be partially applied, creating a new function
+
+#+BEGIN_SRC 
+sdFrom11 = squaredDistance 1 1 :: Int -> Int -> Int
+sdFrom11 4 4 :: Int
+#+END_SRC
+
+** Composition
+
+Two functions can be composed, creating a new function
+
+#+BEGIN_SRC 
+f = fac . length :: String -> Int
+#+END_SRC
+
+is the same as
+
+#+BEGIN_SRC 
+f n = fac (length n) :: String -> Int
+#+END_SRC
+
+** Anonymous functions
+
+We can define an anonymous function (*lambda*) with =\args= =->= =body=
+
+#+BEGIN_SRC 
+doubleLength = (\n -> n * 2) . length
+#+END_SRC
+
+** Higher-order functions
+
+It's  possible to  pass functions  as  arguments to  functions and  have
+functions  return functions.  
+
+For example,  =map= transforms a  list by  applying a function  to every
+element.
+
+#+BEGIN_SRC 
+map (\n -> n + 1) [1,2,3]
+#+END_SRC
+
+#+BEGIN_SRC 
+           ┌-<-<-<-<-<-┐
+           |           |
+           v           |
+
+   map :: (a -> b) -> [a] -> [b]
+
+          ^^^^^^^^    ^^^    ^^^--- [2,3,4]
+             |         |
+             |         └--- [1,2,3]
+        \n -> n + 1
+#+END_SRC
+
+* Algebraic Data Types
+** Sum types
+
+The simplest example of a sum type is
+
+#+BEGIN_SRC 
+data Bool = True 
+          | False
+#+END_SRC
+
+Bool value is either =True= or =False=.
+
+#+BEGIN_SRC 
+x = True :: Bool
+#+END_SRC
+
+** Product types
+A product type is defined as
+
+#+BEGIN_SRC
+data Person = Person String Int
+
+     ^^^^^^   ^^^^^^ ^^^^^^ ^^^
+       |        |      |     |
+       |        |      └-----┴----- data constructor parameters
+       |        |
+       |        └-- data constructor
+       |
+       └-- type constructor
+#+END_SRC
+
+The =Person= on the left side is the *type constructor*. The =Person= on
+the right side  is the *data constructor*. These don't  have to have the
+same  name,  but they  often  do,  to  the  chagrin of  Haskell  newbies
+everywhere.
+
+To create a value of type =Person=, use the =Person= data constructor:
+
+#+BEGIN_SRC 
+p = Person "Morty" 22 :: Person
+#+END_SRC
+
+** Named data constructor parameters
+
+Data constructor parameters can be named
+
+#+BEGIN_SRC 
+data Person = Person
+  { name :: String
+  , age  :: Int
+  }
+#+END_SRC
+
+then an alternative way to create a Person is to write
+
+#+BEGIN_SRC 
+p = Person { name = "Morthy"
+           , age  = 22
+           }
+#+END_SRC
+
+** Type constructor parameters
+
+Type constructors can have parameters
+
+#+BEGIN_SRC 
+data Maybe a = Nothing
+             | Just a
+#+END_SRC
+
+where =a= is a type.
+
+#+BEGIN_SRC 
+greeting = Just "Hello" :: Maybe String
+name = Nothing :: Maybe String
+#+END_SRC
+
+** Compound example
+
+For example, a ship may or may not have a captain
+
+#+BEGIN_SRC 
+data Ship = Ship
+  { shipName :: String
+  , captain  :: Maybe Person
+  }
+#+END_SRC
+
+We can make a Ship with one
+
+#+BEGIN_SRC 
+s1 = Ship { shipName = "Queen Elizabeth 2"
+         , captain = Just ( Person "William Cooper" 50 )
+         }
+#+END_SRC
+
+And one without
+
+#+BEGIN_SRC 
+s2 = Ship { shipName = "Dinghy"
+         , captain = Nothing }
+         }
+#+END_SRC
+
+** Data constructor parameter namespace
+
+In the above example, =Person= had  a =name= parameter, but =Ship= had a
+=shipName= parameter. This is  because data constructor parameters share
+one namespace and  cannot be reused in different data  types. And that's
+because...
+
+** Data constructor named parameters are functions
+
+These are automatically generated for you
+
+#+BEGIN_SRC 
+name :: Person -> String
+age  :: Person -> Int
+
+shipName :: Ship -> Maybe String
+captain  :: Ship -> Maybe Person
+#+END_SRC
+
+Different functions (in the same module) can't have the same name.
+
+** Updating values with named constructor parameters
+
+We can take an existing data  type with named constructor parameters and
+update it. For example, to remove the captain from =s1= above
+
+#+BEGIN_SRC 
+s3 = s1 { captain = Nothing }
+#+END_SRC
+
+This creates a new copy of =s1=, =s3=, changing the parameters supplied.
+
+** Recursive data types
+
+data type definitions can be recursive
+
+#+BEGIN_SRC 
+data List a = Nil
+            | Append a (List a)
+#+END_SRC
+
+a =List= of =a= is then either =Nil= (empty list) or an element of type
+=a= appended to a =List= of type =a=.
+
+#+BEGIN_SRC 
+l :: List Int
+l = Append 1 (Append 2 (Append 3 (Append 4 Nil)))
+#+END_SRC
+* Lists
+
+Lists are a  built-in recursive data type. They're  constructed with the
+cons operator "=:="
+
+#+BEGIN_SRC 
+1 : ( 2 : ( 3 : ( 4 : [] )))
+#+END_SRC
+
+Haskell provides an easier way to write the above
+
+#+BEGIN_SRC 
+[1, 2, 3, 4] :: [Int]
+#+END_SRC
+
+A =String= is a list of =Char=
+
+#+BEGIN_SRC 
+s = "Hello World" :: [Char]
+#+END_SRC
+* Tuples
+A tuple is a fixed size container. Unlike lists, a tuple may contain
+different types
+
+for example
+
+#+BEGIN_SRC
+("Proxima Centauri", 3, 4, 5) :: (String, Int, Int, Int)
+#+END_SRC
+* If and case
+
+=if= ... =then= ... =else= ... is an expression. The =else= is mandatory
+(what value would the expression evaluate to if it wasn't?)
+
+#+BEGIN_SRC
+describeIntSign :: Int -> String
+describeIntSign n =
+  if n > 0 
+    then "positive"
+    else "negative"
+#+END_SRC
+
+=case= ... =of= ...  is also an expression, but a  bit more general than
+=if=.
+
+#+BEGIN_SRC
+describeInt :: Int -> String
+describeInt n =
+  case n of
+    0 -> "zero"
+    1 -> "one"
+    2 -> "two"
+    _ -> "I don't know that number"
+#+END_SRC
+
+* Deconstructing values
+
+Data type values can be  deconstructed with pattern matching in function
+arguments
+
+#+BEGIN_SRC 
+data Person = Person
+  { name :: Maybe String 
+  , age  :: Int 
+  }
+
+nonsense :: Person -> Int
+nonsense (Person  Nothing a) = a
+nonsense (Person (Just n) a) = length n + a
+#+END_SRC
+
+here  =n=  and =a=  will  be  locally bound  to  =name=  (when it  isn't
+=Nothing=) and =age= of the person.
+
+We can also pattern match in case expressions
+
+#+BEGIN_SRC 
+case p of
+  Person  Nothing a -> "This person doesn't have a name"
+  Person (Just n) a -> "This person's name is " ++ n
+#+END_SRC
+
+and let expressions
+
+#+BEGIN_SRC 
+let (Person _ a) = p in a + 1
+#+END_SRC
+
+use =_= to indicate that you don't care about a parameter.
+
+Lists and tuples can also be pattern matched.
+
+#+BEGIN_SRC 
+headIntList :: [Int] -> Int
+head (first:rest) = first
+
+      ^^^^^^^^^^
+          |
+  recall, a list is an element appended (:'ed) to the rest of the list
+
+swapPair :: (Int, Int) -> (Int, Int)
+swapPair (x, y) = (y, x)
+#+END_SRC
+
+* Parametric polymorphism
+
+Defining a new function for each type of list like above would be silly.
+Haskell allows us to write generic/polymorphic functions.
+
+#+BEGIN_SRC 
+         ┌-- type variables, a is any type
+         |
+         ├-----┐
+         |     |
+         v     v
+
+head :: [a] -> a
+head (first:rest) = first
+
+swap :: (a, b) -> (b, a)
+swap (a, b) = (b, a)
+#+END_SRC
+
+type parameters are always lowercase.
+
+* Typeclasses
+
+Typeclasses allow you to overload functions
+
+#+BEGIN_SRC
+class Eq a where
+  (==) :: a -> a -> Bool
+#+END_SRC
+
+types are instances of typeclasses
+
+#+BEGIN_SRC 
+instance Eq Char where
+  (==) = ...
+#+END_SRC
+
+** Standard typeclasses
+
+You can make your own, but Haskell already defines many typeclasses
+
+| typeclass  | functions                                                                                                                                                                                      |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Eq         | ~(==)~, ~(/=)~                                                                                                                                                                                 |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Ord        | =(<)=, ~(<=)~, ~(>=)~, ~(>)~, =max=, =min=                                                                                                                                                     |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Enum       | =succ=, =pred=, =toEnum=, =fromEnum=, =enumFrom=, =enumFromThen=, =enumFromTo=, =enumFromThenTo=                                                                                               |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Num        | =(+)=, =(-)=, =(⋆)=, =negate=, =abs=, =signum=, =fromInteger=                                                                                                                                  |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Real       | =toRational=                                                                                                                                                                                   |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Integral   | =quot=, =rem=, =div=, =mod=, =quotRem=, =divMod=, =toInteger=                                                                                                                                  |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Fractional | =(/)=, =recip=, =fromRational=                                                                                                                                                                 |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Floating   | =pi=, =exp=, =log=, =sqrt=, =(⋆⋆)=, =logBase=, =sin=, =cos=, =tan=, =asin=, =acos=, =atan=, =sinh=, =cosh=, =tanh=, =asinh=, =atanh=                                                           |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| RealFrac   | =properFraction=, =truncate=, =round=, =ceiling=, =floor=                                                                                                                                      |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| RealFloat  | =floatRadix=, =floatDigits=, =floatRange=, =decodeFloat=, =encodeFloat=, =exponent=, =significand=, =scaleFloat=, =isNaN=, =isInfinite=, =isDenormalized=, =isIEEE=, =isNegativeZero=, =atan2= |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Monad      | ~(>>=)~, =(>>)=, =return=, =fail=                                                                                                                                                              |
+|------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Functor    | ~fmap~                                                                                                                                                                                         |
+
+** Automatic deriving
+
+Haskell can automatically derive some  typeclass instances for your data
+types (restrictions may apply). E.g.
+
+#+BEGIN_SRC 
+data Person = Person String Int 
+  deriving Eq
+
+p1 = Person "Rick" 50
+
+p2 = Person "Morty" 12
+
+p1 == p2 :: Bool
+#+END_SRC
+
+** Show & Read
+
+=Show= and =Read= are two important typeclasses. They implement =show=
+and =read= and can be automatically derived.
+
+#+BEGIN_SRC 
+show :: Show a => a -> String
+read :: Read a => String -> a
+#+END_SRC
+
+That is,  for types with a  =Show= instance, =show= will  turn the value
+into a =String=. For types with  a =Read= instance, =read= will turn the
+=String= into the value of type =a=
+
+#+BEGIN_SRC 
+data Person = Person String Int
+  deriving (Eq, Show, Read)
+
+p1 = read "Person \"Rick\" 50" :: Person
+
+show p1 :: String
+#+END_SRC
+
+You should not use =read= unless you know that the string is valid. An
+invalid string will cause a runtime error.
+
+for inputs that may fail to parse, use =readMaybe=
+
+#+BEGIN_SRC 
+Text.Read.readMaybe :: Read a => String -> Maybe a
+#+END_SRC
+
+* IO
+** Example: Echoing input line
+
+Understanding  how IO  works  in  Haskell requires  an  usual amount  of
+background knowledge compared to  other programming languages. It's best
+to begin with an example.
+
+Haskell executables begin with the main function.
+
+#+BEGIN_SRC 
+main :: IO ()
+main = getLine >>= putStrLn
+#+END_SRC
+
+The types of these functions (often called *actions*) are
+
+#+BEGIN_SRC 
+getLine  :: IO String
+putStrLn :: String -> IO ()
+#+END_SRC
+
+~(>>=)~ chains them together
+
+#+BEGIN_SRC 
+(>>=) :: IO a -> (a -> IO b) -> IO b
+
+         ^^^^    ^^^^^^^^^^^    ^^^^
+           |          |          |
+ getLine --┘          |          |
+                      |          └-- main
+          putStrLn ---┘
+#+END_SRC
+
+** Example: Guess the number
+
+What if  we want to chain  together two =IO a=  actions like =putStrLn=?
+Replace the second one with a lambda that ignores its argument.
+
+#+BEGIN_SRC
+putStrLn "Hello" >>= \_ -> putStrLn "World"
+
+^^^^^^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^^^^
+       |                        |
+     IO a                   a -> IO b
+#+END_SRC
+
+We can make a "guess the number" game with these functions (and =randomRIO=)
+
+#+BEGIN_SRC 
+import System.Random
+
+guessGame :: Int -> IO ()
+guessGame n =
+  putStrLn "Guess the number (1-10): " >>= _ ->
+  getLine >>= \input -> 
+  if read input == n
+    then putStrLn "You guessed it!"
+    else putStrLn "Wrong!" >>= _ -> 
+         guessGame n
+
+main :: IO ()
+main = randomIO (1,10) >>= guessGame
+#+END_SRC
+
+** Do notation
+
+Haskell provides a nicer notation of composing IO actions with =do= notation
+
+#+BEGIN_SRC 
+import System.Random
+
+guessGame :: Int -> IO ()
+guessGame n = do
+  putStrLn Guess the number (1-10): "
+  input <- getLine
+  if read input == n
+    then putStrLn "You guessed it!"
+    else do putStrLn "Wrong!"
+            guessGame n
+
+main :: IO ()
+main = do
+  n <- randomRIO (1,10)
+  guessGame n
+#+END_SRC
+
+** Looping
+
+We can loop with the monadic map =mapM_=
+
+#+BEGIN_SRC 
+                         ┌-<-<-<-<-<-<-<-┐
+                         |               |
+                         v               |
+
+           map  M  _ :: (a -> IO ()) -> [a] -> IO ()
+
+                ^  ^    ^^^^^^^^^^^^    ^^^    ^^^^^
+                |  |        |            |       |
+                |  |        └-- action   |       └-- no results returned
+                |  |            to run   |
+works on Monads ┘  |                     |
+                   |                     └-- list to run it on
+  discards results ┘
+
+^^^^^^^^^^^^^^^^^^^^^
+  naming convention
+#+END_SRC
+
+For example, to print the ASCII value of =Char= from A to Z
+
+#+BEGIN_SRC 
+main = mapM_ (print . fromEnum) ['A'..'Z']
+#+END_SRC
+
+
+#+END_SRC

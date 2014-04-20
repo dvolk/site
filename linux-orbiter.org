@@ -1,9 +1,7 @@
 #+HTML_HEAD_EXTRA: <link rel="stylesheet" type="text/css" href="mixed-tut.css" />
 
 #+BEGIN_HTML
-<div style="position: absolute; top: 0px; left: 0px; padding: 2px; border-bottom: 2px solid black; border-right: 2px solid black;">
-<a href="./index.html"><p style="margin: 0px; padding: 0px; "> &lt; Index</p></a>
-</div>
+<div id="corner-to-index"><a href="./index.html"><p id="index-text"> &lt; Index</p></a></div>
 #+END_HTML
 
 #+TITLE: Orbiter Space Flight Simulator on GNU/Linux HOW-TO
