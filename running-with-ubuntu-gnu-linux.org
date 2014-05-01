@@ -1,8 +1,5 @@
 #+HTML_HEAD_EXTRA: <link rel="stylesheet" type="text/css" href="mixed-tut.css" />
-
-#+BEGIN_HTML
-<div id="corner-to-index"><a href="./index.html"><p id="index-text"> &lt; Index</p></a></div>
-#+END_HTML
+#+INCLUDE: topbar.org
 
 #+TITLE: Running with Ubuntu GNU/Linux
 #+AUTHOR: Denis Volk

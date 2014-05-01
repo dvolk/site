@@ -20,7 +20,7 @@ dv -- Denis  Volk. I like free software, haskell,  video games, space,
 and cats 😸.
 * By me
 ** Here
-- [[./a-quick-look-at-haskell.html][A Quick Look at Haskell (WIP)]]
+- [[./a-quick-look-at-haskell.html][A Quick Look at Haskell]]
 - [[./running-with-ubuntu-gnu-linux.html][Running with Ubuntu GNU/Linux]]
 - [[./linux-orbiter.html][Orbiter Space Flight Simulator on GNU/Linux HOW-TO]]
 ** Elsewhere

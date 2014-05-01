@@ -1,10 +1,7 @@
 #+HTML_HEAD_EXTRA: <link rel="stylesheet" type="text/css" href="mixed-tut.css" />
+#+INCLUDE: topbar.org
 
-#+BEGIN_HTML
-<div id="corner-to-index"><a href="./index.html"><p id="index-text"> &lt; Index</p></a></div>
-#+END_HTML
-
-#+TITLE: A Quick Look at Haskell (WIP)
+#+TITLE: A Quick Look at Haskell
 #+AUTHOR: Denis Volk
 #+EMAIL: denis.volk@gmail.com
 #+KEYWORDS: haskell tutorial
@@ -44,10 +41,10 @@ Types are declared using the reserved operator =::= (read as "has type")
 xs = "Hello World" :: String
 #+END_SRC
 
-Here =xs= is a *variable* (or *bound value*). 
+Here =xs= is a *variable*.
 
-Variables and types names are case sensitive. Variables names begin with
-a lowercase character and types names begin with an uppercase character.
+Variables and types names are  case sensitive. Variable names begin with
+a lowercase character and type names begin with an uppercase character.
 
 Type declarations  are optional.  In their  absence, Haskell  will infer
 the types. If it can't, you'll be asked to provide them.
@@ -72,7 +69,7 @@ fac n = n * fac (n - 1)
 
 ** Let
 
-We can define local bindings with =let= ... =in= ...
+We can define local variables with =let= ... =in= ...
 
 #+BEGIN_SRC 
 squaredDistance :: Int -> Int -> Int -> Int -> Int
@@ -87,7 +84,9 @@ squaredDistance x1 y1 x2 y2 =
 A function can be partially applied, creating a new function
 
 #+BEGIN_SRC 
-sdFrom11 = squaredDistance 1 1 :: Int -> Int -> Int
+sdFrom11 :: Int -> Int -> Int
+sdFrom11 = squaredDistance 1 1
+
 sdFrom11 4 4 :: Int
 #+END_SRC
 
@@ -177,7 +176,8 @@ everywhere.
 To create a value of type =Person=, use the =Person= data constructor:
 
 #+BEGIN_SRC 
-p = Person "Morty" 22 :: Person
+p :: Person
+p = Person "Morty" 22
 #+END_SRC
 
 ** Named data constructor parameters
@@ -191,7 +191,7 @@ data Person = Person
   }
 #+END_SRC
 
-then an alternative way to create a Person is to write
+then an alternative way to create a =Person= is to write
 
 #+BEGIN_SRC 
 p = Person { name = "Morthy"
@@ -212,7 +212,7 @@ where =a= is a type.
 
 #+BEGIN_SRC 
 greeting = Just "Hello" :: Maybe String
-name = Nothing :: Maybe String
+name     = Nothing      :: Maybe String
 #+END_SRC
 
 ** Compound example
@@ -413,7 +413,7 @@ swap :: (a, b) -> (b, a)
 swap (a, b) = (b, a)
 #+END_SRC
 
-type parameters are always lowercase.
+type variables are always lowercase.
 
 * Typeclasses
 
@@ -512,7 +512,7 @@ Text.Read.readMaybe :: Read a => String -> Maybe a
 * IO
 ** Example: Echoing input line
 
-Understanding  how IO  works  in  Haskell requires  an  usual amount  of
+Understanding  how IO  works  in  Haskell requires  an  unusual amount  of
 background knowledge compared to  other programming languages. It's best
 to begin with an example.
 
@@ -548,26 +548,31 @@ What if  we want to chain  together two =IO a=  actions like =putStrLn=?
 Replace the second one with a lambda that ignores its argument.
 
 #+BEGIN_SRC
-putStrLn "Hello" >>= \_ -> putStrLn "World"
+putStrLn "Hello"    >>=    \_ -> putStrLn "World"
 
-^^^^^^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^^^^
-       |                        |
-     IO a                   a -> IO b
+^^^^^^^^^^^^^^^^           ^^^^^^^^^^^^^^^^^^^^^^
+       |                              |
+     IO a                         a -> IO b
 #+END_SRC
 
 We can make a "guess the number" game with these functions (and =randomRIO=)
 
 #+BEGIN_SRC 
+import Text.Read
 import System.Random
 
 guessGame :: Int -> IO ()
 guessGame n =
-  putStrLn "Guess the number (1-10): " >>= _ ->
+  putStrLn "Guess the number (1-10): " >>= \_ ->
   getLine >>= \input -> 
-  if read input == n
-    then putStrLn "You guessed it!"
-    else putStrLn "Wrong!" >>= _ -> 
-         guessGame n
+  case readMaybe input of
+    Nothing    -> putStrLn "not sure what you just typed!" >>= \_ ->
+                  guessGame n
+    Just guess ->
+      if guess == n
+        then putStrLn "You guessed it!"
+        else putStrLn "Wrong!" >>= \_ -> 
+             guessGame n
 
 main :: IO ()
 main = randomIO (1,10) >>= guessGame
@@ -578,16 +583,21 @@ main = randomIO (1,10) >>= guessGame
 Haskell provides a nicer notation of composing IO actions with =do= notation
 
 #+BEGIN_SRC 
+import Text.Read
 import System.Random
 
 guessGame :: Int -> IO ()
 guessGame n = do
-  putStrLn Guess the number (1-10): "
+  putStrLn "Guess the number (1-10): "
   input <- getLine
-  if read input == n
-    then putStrLn "You guessed it!"
-    else do putStrLn "Wrong!"
-            guessGame n
+  case readMaybe input of
+    Nothing -> do putStrLn "not sure what you just typed!"
+                  guessGame n
+    Just guess -> 
+      if guess == n
+        then putStrLn "You guessed it!"
+        else do putStrLn "Wrong!"
+                guessGame n
 
 main :: IO ()
 main = do
@@ -624,5 +634,83 @@ For example, to print the ASCII value of =Char= from A to Z
 main = mapM_ (print . fromEnum) ['A'..'Z']
 #+END_SRC
 
+where
 
+#+BEGIN_SRC 
+print    :: Show a => a -> IO ()
+fromEnum :: Enum a => a -> Int
 #+END_SRC
+
+This  type of  looping  is  more limited  than  =for  (;;)= from  C-like
+languages - you  cannot =break= out of  it for one. Instead  of having a
+few general control  structures, Haskell has many  specialized ones, and
+the ability to easily write your own.
+
+** Concurrent IO
+
+Haskell comes with  light concurrency primitives. So light  in fact that
+it might be better to use one  of the abstractions built on top of them,
+like the =async= package:
+
+#+BEGIN_SRC 
+async :: IO a   ->   IO (Async a) 
+
+         ^^^^        ^^^^^^^^^^^^
+          |               |
+ computation to run       v
+                          |
+                          v
+                          |
+            ┌--<-<-<-<-<--┘
+            v
+            |
+            v
+            |
+         vvvvvvv
+
+wait  :: Async a   ->   IO a
+
+                        ^^^^
+                         |
+               result of computation
+#+END_SRC
+
+For example  we can spawn  ten threads that do  some work, wait  for the
+results and then print them.
+
+#+BEGIN_SRC
+import Control.Concurrent
+import Control.Concurrent.Async
+
+main = do
+  let worker n = do
+        threadDelay (10^6)
+        return (n * 2)
+
+  ts <- mapM (async . worker) [1..10]
+
+  results <- mapM wait ts
+
+  mapM_ print results
+#+END_SRC
+
+Note that =return= is  a function with type =a -> IO a=.  It has no flow
+control meaning  like in many  languages. It's simply turning  the =Int=
+into an =IO Int=.
+
+* More
+
+- https://www.haskell.org/tutorial/ - A  Gentle Introduction to Haskell,
+  Version 98 (slightly misleading title)
+
+- https://www.haskell.org/ghc/docs/latest/html/libraries/index.html    -
+  Documentation for the libraries that come with GHC
+
+- http://book.realworldhaskell.org/ - Real World Haskell
+
+- http://community.haskell.org/~simonmar/pcph/ - Parallel and Concurrent
+  Programming in Haskell
+
+- https://en.wikibooks.org/wiki/Haskell Haskell Wikibook
+
+-----

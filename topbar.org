@@ -1,0 +1,9 @@
+#+BEGIN_HTML
+<div id="corner-to-index">
+  <p id="index-text-p">
+    <a id="index-text-1" href="./index.html">Index</a> 
+    <a id="index-text-2" href="https://github.com/dvolk/site">Edit</a>
+    <a id="index-text-3" href="mailto:denis.volk@gmail.com">Contact</a>
+  </p>
+</div>
+#+END_HTML
